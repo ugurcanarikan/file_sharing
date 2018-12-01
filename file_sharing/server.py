@@ -7,6 +7,12 @@ import os
 from hashlib import md5
 import subprocess
 
+
+def getSize(fileobject):
+    fileobject.seek(0,2) # move the cursor to the end of the file
+    size = fileobject.tell()
+    return size
+
 def get_input():
     return stdin.readline().rstrip(" \n\r")
 
@@ -82,14 +88,20 @@ def accept_discovery():
                 files = subprocess.check_output("ls").decode().split("\n")
                 if sendername in files:
                   print(sendername + " exists")
-                  statinfo = os.path.getsize("./" + sendername)
-                  print(statinfo)
-                  file_pck = "3;" + host + ";" + host_name + ";" + senderip + ";" + statinfo 
+                  #statinfo = os.path.getsize("./" + sendername)
+                  #print(statinfo)
+                  file = open("./" + sendername, 'rb')
+                  print(getSize(file))
+                  file_size = getSize(file)
+                  print("here")
+                  file_pck = "3;" + host + ";" + host_name + ";" + sendername + ";" + str(file_size)
+                  print("################################sending ", file_pck)
                   thread = Thread(target=send_pck, args=((senderip, discover_port), file_pck))
                   threads.append(thread)
                   thread.start()
             if mod == "3":
-              print(senderip)
+                print(senderip)
+                print("########################GOT MESSAGE TYPE 3")
             client.close()
         except Exception as e:
             pass
