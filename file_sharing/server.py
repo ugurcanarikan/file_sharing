@@ -15,7 +15,7 @@ def get_file_from_seeders():
     file_packet_size = file_to_download_size / packet_size
     received_file = []
     #select seeder, send it a message contatining "6; host_ip, listening port,filename,chunk_no"
-    seeder = seeders.index(1) #seeder = clientip
+    seeder = seeders.pop() #seeder = clientip
     msg = "6;"+ host + ";" + str(3500) +";" + file_to_download + ";" + "1" #listening from port 3500
     send_pck((seeder,discover_port),msg)
     s = socket(AF_INET, SOCK_DGRAM)
@@ -25,7 +25,7 @@ def get_file_from_seeders():
     received_msg = data.decode().split(";")
     rwnd = 1
     if(received_msg[0] == 7 and received_msg[1]=="Start"): #it starts to send
-        msg = "ACK;"+ str(rwnd)
+        msg = "8;"+ str(rwnd)
         send_pck((seeder, discover_port), msg)
 
     index = 0
@@ -47,8 +47,55 @@ def get_file_from_seeders():
             print("Socket error ", e)
     return received_file
 
-def send_file_to_client(client_ip, client_port, client_file_name, chunk_no):
-    rec_rwnd = 1
+def send_file_to_client(client_ip, client_port, client_file_name, rec_wnd):
+    socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
+    socket.bind(("", 3500))
+    # Start connection
+    # Wait for ACK
+    # Set rwnd
+    file = open("./" + client_file_name, "rb")
+    file_size = getSize(file)
+    chunk_number = math.ceil(file_size / 1500.0)
+    # Start at chunk index 0
+    chunk_index = 0
+    in_flight = 0
+    # Set timeout for socket
+    socket.settimeout(1)
+    # Start sending the chunk starting at index 0.
+    send_Notfinished = True
+    total_sent_packet = 0
+    while (True):
+        # Send rwnd number of chunks
+        while (in_flight < rec_rwnd and send_Notfinished):
+            if (chunk_index + in_flight < chunk_number):
+                to_send = file.read(1500*chunk_index)
+                msg = str(chunk_index + in_flight) + ";" + to_send.decode())
+                send_pck((client_ip, client_port), msg)
+                in_flight += 1
+                total_sent_packet += 1
+            if (total_sent_packet == chunk_number):
+                send_Notfinished = False
+                socket.sendto(b'EOF', (client_ip, client_port))
+                break
+        # Wait for ACK
+        try:
+            data, addr = socket.recvfrom(4096)
+            if data.decode().split(";")[0] == "ACK":
+                #print("Got ACK")
+                rec_rwnd = int(data.decode().split(";")[1])
+                chunk_index = int(data.decode().split(";")[2]) + 1
+                #print(rec_rwnd, chunk_index)
+                in_flight -= 1
+            if data.decode().split(";")[0] == "ACKEOF":
+                return
+        except s.timeout as e:
+            print("Try to send again")
+            in_flight = 0
+        except s.error as e:
+            print("Socket error: {}".format(e))
+
+    return True
+
 
 
 def getSize(fileobject):
@@ -154,6 +201,11 @@ def accept_discovery():
                     file_to_download_size = "put file size here"
                 if senderip not in seeders:
                     seeders.append(senderip)
+            if mod == "6":
+              send_pck((senderip, 3500), "7;Start;;;")
+            if mod == "8":
+              rwnd = senderip
+              send_file_to_client()
             client.close()
         except Exception as e:
             pass
