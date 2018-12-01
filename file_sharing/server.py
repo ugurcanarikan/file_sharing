@@ -8,7 +8,21 @@ from hashlib import md5
 
 def get_input():
     return stdin.readline().rstrip(" \n\r")
+
+def get_seeders(file_name):
+    threads = []
+    for user in users:
+        recvip = addresses[user]
+        file_discover_pck = "2;" + host + ";" + file_name + ";" + recvip + ";"
+        print("sending ", file_discover_pck)
+        thread = Thread(target=send_pck, args=((recvip, discover_port), file_discover_pck))
+        threads.append(thread)
+        thread.start()
+    for thread in threads:
+        thread.join()
+
 def send_discovery():
+    print("sending discovery")
     arr = host.split(".")
     arr.pop()
     ip = ".".join(arr)
@@ -16,12 +30,14 @@ def send_discovery():
     for i in range(1, 255):
         recvip = ip + "." + str(i)
         discover_pck = "0;" + host + ";" + host_name + ";" + recvip + ";"
+        #print("sending ", discover_pck)
         thread = Thread(target=send_pck, args=((recvip, discover_port), discover_pck))
         threads.append(thread)
         thread.start()
     for thread in threads:
         thread.join()
 #    print("disovery finished")
+
 def send_pck(to, pck):
     sock = socket(AF_INET, SOCK_STREAM)
     sock.settimeout(20)
@@ -45,6 +61,7 @@ def accept_discovery():
             client, client_address = discover_server.accept()
 #            print("someone is here "+ client_address[0])
             discover_pck = client.recv(buffer_size).decode("utf8")
+            print("Got ", discover_pck)
             try:
                 mod, senderip, sendername, recvip, recvname = discover_pck.split(";")
             except ValueError:
@@ -57,6 +74,7 @@ def accept_discovery():
             if mod == "0":
                 discover_pck = "1;" + host + ";" + host_name + ";" + senderip + ";" + sendername
                 client.send(bytes(discover_pck, "utf8"))
+                #print("Sent ", discover_pck)
             client.close()
         except Exception as e:
             pass
@@ -219,7 +237,9 @@ while True:
     elif input == "3":
         Thread(target=send_discovery).start()
     elif input == "4":
-        discover_seeders()
+        print("Please enter a file name")
+        file_name = get_input()
+        Thread(target=get_seeders, args=(file_name,)).start()
     elif input == "5":
         os._exit(0)
     else:

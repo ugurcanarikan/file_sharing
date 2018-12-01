@@ -1,5 +1,4 @@
 from socket import *
-from subprocess import check_output
 import os
 import subprocess
 
@@ -7,7 +6,7 @@ clear = 'clear'
 if os.name == 'nt':
     clear = 'cls'
 host = str(subprocess.check_output("ipconfig getifaddr en0", shell=True))[2:-3]
-host_name = "ua"
+host_name = "bg"
 msg_port = 5001
 discover_port = 5000
 chatapp_port = 5124
