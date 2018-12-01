@@ -16,3 +16,4 @@ discover_addr = (host, discover_port)
 chatapp_addr = (host, chatapp_port)
 msg_server = socket(AF_INET, SOCK_STREAM)
 discover_server = socket(AF_INET, SOCK_STREAM)
+packet_size = 1500

@@ -7,6 +7,10 @@ import os
 from hashlib import md5
 import subprocess
 
+def get_file_from_seeders():
+    print("file name and size: ", file_to_download," ",file_to_download_size)
+
+
 
 def getSize(fileobject):
     fileobject.seek(0,2) # move the cursor to the end of the file
@@ -84,24 +88,31 @@ def accept_discovery():
                 client.send(bytes(discover_pck, "utf8"))
                 print("Sent ", discover_pck)
             if mod == "2":
-                print("someone is asking for a file ",sendername)
+                file_name_in_pck = sendername
+                print("someone is asking for a file ",file_name_in_pck)
+                if senderip == host:
+                    global file_to_download
+                    file_to_download = file_name_in_pck
                 files = subprocess.check_output("ls").decode().split("\n")
-                if sendername in files:
-                  print(sendername + " exists")
-                  #statinfo = os.path.getsize("./" + sendername)
-                  #print(statinfo)
-                  file = open("./" + sendername, 'rb')
-                  print(getSize(file))
-                  file_size = getSize(file)
-                  print("here")
-                  file_pck = "3;" + host + ";" + host_name + ";" + sendername + ";" + str(file_size)
-                  print("################################sending ", file_pck)
-                  thread = Thread(target=send_pck, args=((senderip, discover_port), file_pck))
-                  threads.append(thread)
-                  thread.start()
+                if file_name_in_pck in files:
+                    print(file_name_in_pck + " exists")
+                    #statinfo = os.path.getsize("./" + sendername)
+                    #print(statinfo)
+                    file = open("./" + file_name_in_pck, 'rb')
+                    print(getSize(file))
+                    file_size = getSize(file)
+                    file_pck = "3;" + host + ";" + host_name + ";" + file_name_in_pck + ";" + str(file_size)
+                    print("################################sending ", file_pck)
+                    thread = Thread(target=send_pck, args=((senderip, discover_port), file_pck))
+                    threads.append(thread)
+                    thread.start()
             if mod == "3":
                 print(senderip)
                 print("########################GOT MESSAGE TYPE 3")
+                if senderip == host:
+                    global file_to_download_size
+                    file_to_download = file_name_in_pck
+                    file_to_download_size = "put file size here"
                 if senderip not in seeders:
                     seeders.append(senderip)
             client.close()
@@ -206,8 +217,10 @@ clients = {}
 addresses = {}
 message_list = {}
 message_encode = {}
-seeders = []
 
+seeders = []
+file_to_download = "(No file selected)"
+file_to_download_size = 0
 
 #chatapp = socket(AF_INET, SOCK_STREAM)
 #while True:
@@ -239,7 +252,7 @@ while True:
     print("2. Message rooms")
     print("3. Discovery")
     print("4. Discover seeders")
-    print("5. Get file")
+    print("5. Get file", file_to_download)
     print("6. Exit")
     input = get_input()
     if input == "1":
@@ -278,6 +291,7 @@ while True:
         print("will ask files from: ")
         for ip in seeders:
             print(ip)
+        get_file_from_seeders()
     elif input == "6":
         os._exit(0)
     else:
