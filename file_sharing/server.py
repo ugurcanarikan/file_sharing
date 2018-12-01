@@ -41,7 +41,7 @@ def send_discovery():
 
 def send_pck(to, pck):
     sock = socket(AF_INET, SOCK_STREAM)
-    sock.settimeout(20)
+    sock.settimeout(1)
     try:
         sock.connect(to)
         sock.send(bytes(pck, "utf8"))
@@ -78,17 +78,18 @@ def accept_discovery():
                 client.send(bytes(discover_pck, "utf8"))
                 print("Sent ", discover_pck)
             if mod == "2":
-                files = subprocess.check_output("ls").decode().split("\n")
-                print(files)
-                if sendername in files:
-                  response = "3;" + host + ";"
-                  print(response)
-                  print(client)
-                  client.send(bytes(response, "utf8"))
-                print(files)
-                positive_response = "3;" + host 
                 print("someone is asking for a file ",sendername)
-
+                files = subprocess.check_output("ls").decode().split("\n")
+                if sendername in files:
+                  print(sendername + " exists")
+                  statinfo = os.path.getsize("./" + sendername)
+                  print(statinfo)
+                  file_pck = "3;" + host + ";" + host_name + ";" + senderip + ";" + statinfo 
+                  thread = Thread(target=send_pck, args=((senderip, discover_port), file_pck))
+                  threads.append(thread)
+                  thread.start()
+            if mod == "3":
+              print(senderip)
             client.close()
         except Exception as e:
             pass
