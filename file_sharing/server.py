@@ -145,7 +145,7 @@ def listen_seeders():
 
 def discover_seeders():
     message = "0;;" + host + ";;"
-    destination = ('<broadcast>', 5000)
+    destination = ('<broadcast>', discover_port)
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     try:
@@ -154,6 +154,7 @@ def discover_seeders():
       response = response.decode("utf-8");
       response = response.split(";")
       senderIP = response[1]
+      print(response)
       s.close()
     except Exception as e:
       print(e)
