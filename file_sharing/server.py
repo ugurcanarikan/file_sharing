@@ -8,8 +8,47 @@ from hashlib import md5
 import subprocess
 
 def get_file_from_seeders():
+    global file_to_download_size
     print("file name and size: ", file_to_download," ",file_to_download_size)
+    print("for now we are giving 846 as size")
+    file_to_download_size = 846
+    file_packet_size = file_to_download_size / packet_size
+    received_file = []
+    #select seeder, send it a message contatining "6; host_ip, listening port,filename,chunk_no"
+    seeder = seeders.index(1) #seeder = clientip
+    msg = "6;"+ host + ";" + str(3500) +";" + file_to_download + ";" + "1" #listening from port 3500
+    send_pck((seeder,discover_port),msg)
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.bind(("", 3500))
+    data, addr = s.recvfrom(4096)
+    #if it accepts it returns 6;ACK
+    received_msg = data.decode().split(";")
+    rwnd = 1
+    if(received_msg[0] == 7 and received_msg[1]=="Start"): #it starts to send
+        msg = "ACK;"+ str(rwnd)
+        send_pck((seeder, discover_port), msg)
 
+    index = 0
+    s.setblocking(True)
+    while (True):
+        try:
+            #receive data
+            data = s.recv(4096)
+            packet_num = data.decode().split(";")[0] #sends packet no; data
+            if packet_num == "EOF":
+                send_pck((seeder, discover_port), "ACKEOF")
+                break
+            received_file.append("".join(data.decode().split(";")[1]))
+            if(index == int(packet_num)): # if we received the chunk in order
+                packet = "ACK;"+ str(rwnd)+";"+ packet_num
+                send_pck((seeder,discover_port), packet)
+                index += 1
+        except error as e:
+            print("Socket error ", e)
+    return received_file
+
+def send_file_to_client(client_ip, client_port, client_file_name, chunk_no):
+    rec_rwnd = 1
 
 
 def getSize(fileobject):
