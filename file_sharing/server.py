@@ -107,6 +107,40 @@ def handle_client(client, client_ip):
             client.close()
             break
 
+def listen_seeders():
+  with socket(AF_INET, SOCK_DGRAM) as s:
+    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    s.bind(("", discover_port))
+    while 1:
+      message , address = s.recvfrom(1024);
+      print(message);
+      message = message.decode("utf-8");
+      message = message.split(";")
+      messageType = message[0]
+      fileName = message[1]
+      senderIP = message[2]
+      senderPort = message[3]
+      if int(messageType) == 0:
+        response = "1;"
+        print(senderIP + " RESPONDED")
+        s.sendto(response.encode(),(address))
+
+def discover_seeders():
+    message = "0;;;;;"
+    destination = ('<broadcast>', 5000)
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+    try:
+      s.sendto(message.encode(), destination)
+      response , address = s.recvfrom(5000)
+      print(response)
+      response = response.decode("utf-8");
+      response = response.split(";")
+      senderIP = response[1]
+      senderName = response[2]
+      s.close()
+    except Exception as e:
+      print(e)
 #def handle_client(client, client_ip):
 #    name = {v: k for k, v in addresses.items()}[client_ip]
 #    print("connection established with " + name)
@@ -148,15 +182,16 @@ threads = []
 threads.append(Thread(target=send_discovery))
 threads.append(Thread(target=accept_discovery))
 threads.append(Thread(target=accept_message))
+threads.append(Thread(target=listen_seeders))
 for t in threads:
     t.start()
 
 while True:
-    t = call(clear, shell=True)
     print("1. Online users")
     print("2. Message rooms")
     print("3. Discovery")
-    print("4. Exit")
+    print("4. Discover seeders")
+    print("5. Exit")
     input = get_input()
     if input == "1":
         print("# Users")
@@ -170,7 +205,6 @@ while True:
         input = get_input()
         if input in users:
             while True:
-                t = call(clear, shell=True)
                 print("### Room - %s" % input +" ###")
                 for msg in message_list[input]:
                     print(msg)
@@ -187,6 +221,8 @@ while True:
     elif input == "3":
         Thread(target=send_discovery).start()
     elif input == "4":
+        discover_seeders()
+    elif input == "5":
         os._exit(0)
     else:
         continue
