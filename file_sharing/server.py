@@ -121,23 +121,21 @@ def listen_seeders():
       senderIP = message[2]
       senderPort = message[3]
       if int(messageType) == 0:
-        response = "1;"
+        response = "1;" + host
         print(senderIP + " RESPONDED")
         s.sendto(response.encode(),(address))
 
 def discover_seeders():
-    message = "0;;;;;"
+    message = "0;;" + host + ";;"
     destination = ('<broadcast>', 5000)
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     try:
       s.sendto(message.encode(), destination)
       response , address = s.recvfrom(5000)
-      print(response)
       response = response.decode("utf-8");
       response = response.split(";")
       senderIP = response[1]
-      senderName = response[2]
       s.close()
     except Exception as e:
       print(e)
