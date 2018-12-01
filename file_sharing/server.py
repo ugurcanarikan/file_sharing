@@ -102,6 +102,8 @@ def accept_discovery():
             if mod == "3":
                 print(senderip)
                 print("########################GOT MESSAGE TYPE 3")
+                if senderip not in seeders:
+                    seeders.append(senderip)
             client.close()
         except Exception as e:
             pass
@@ -204,6 +206,8 @@ clients = {}
 addresses = {}
 message_list = {}
 message_encode = {}
+seeders = []
+
 
 #chatapp = socket(AF_INET, SOCK_STREAM)
 #while True:
@@ -235,7 +239,8 @@ while True:
     print("2. Message rooms")
     print("3. Discovery")
     print("4. Discover seeders")
-    print("5. Exit")
+    print("5. Get file")
+    print("6. Exit")
     input = get_input()
     if input == "1":
         print("# Users")
@@ -269,6 +274,11 @@ while True:
         file_name = get_input()
         Thread(target=get_seeders, args=(file_name,)).start()
     elif input == "5":
+        print("start downloading file, write func for it..")
+        print("will ask files from: ")
+        for ip in seeders:
+            print(ip)
+    elif input == "6":
         os._exit(0)
     else:
         continue
