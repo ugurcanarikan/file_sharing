@@ -5,6 +5,7 @@ from config import *
 from sys import stdin
 import os
 from hashlib import md5
+import subprocess
 
 def get_input():
     return stdin.readline().rstrip(" \n\r")
@@ -64,9 +65,9 @@ def accept_discovery():
             discover_pck = client.recv(buffer_size).decode("utf8")
             print("Got ", discover_pck)
             try:
-                mod, senderip, filename, recvip, recvname = discover_pck.split(";")
+                mod, senderip, sendername, recvip, recvname = discover_pck.split(";")
             except ValueError:
-                pass
+                print("value error")
 #                print("im sad")
 #            print(sendername)
             users.append(sendername)
@@ -75,9 +76,18 @@ def accept_discovery():
             if mod == "0":
                 discover_pck = "1;" + host + ";" + host_name + ";" + senderip + ";" + sendername
                 client.send(bytes(discover_pck, "utf8"))
-                #print("Sent ", discover_pck)
+                print("Sent ", discover_pck)
             if mod == "2":
-                print("someone is asking for a file ",filename)
+                files = subprocess.check_output("ls").decode().split("\n")
+                print(files)
+                if sendername in files:
+                  response = "3;" + host + ";"
+                  print(response)
+                  print(client)
+                  client.send(bytes(response, "utf8"))
+                print(files)
+                positive_response = "3;" + host 
+                print("someone is asking for a file ",sendername)
 
             client.close()
         except Exception as e:
