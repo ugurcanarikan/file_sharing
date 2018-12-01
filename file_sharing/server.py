@@ -54,6 +54,7 @@ def send_pck(to, pck):
         pass
 #        print(to)
     sock.close()
+
 def accept_discovery():
     while True:
 #        print("hello?")
@@ -63,7 +64,7 @@ def accept_discovery():
             discover_pck = client.recv(buffer_size).decode("utf8")
             print("Got ", discover_pck)
             try:
-                mod, senderip, sendername, recvip, recvname = discover_pck.split(";")
+                mod, senderip, filename, recvip, recvname = discover_pck.split(";")
             except ValueError:
                 pass
 #                print("im sad")
@@ -75,6 +76,9 @@ def accept_discovery():
                 discover_pck = "1;" + host + ";" + host_name + ";" + senderip + ";" + sendername
                 client.send(bytes(discover_pck, "utf8"))
                 #print("Sent ", discover_pck)
+            if mod == "2":
+                print("someone is asking for a file ",filename)
+
             client.close()
         except Exception as e:
             pass
